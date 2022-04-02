@@ -1,0 +1,73 @@
+---
+title: "CLUSTER NÃO HIERARQUICO"
+Autor: "Addam Reis"
+---
+
+```{r}
+pacotes <- c("tidyverse","cluster","dendextend","factoextra","fpc","gridExtra",
+             "readxl")
+
+if(sum(as.numeric(!pacotes %in% installed.packages())) != 0){
+  instalador <- pacotes[!pacotes %in% installed.packages()]
+  for(i in 1:length(instalador)) {
+    install.packages(instalador, dependencies = T)
+    break()}
+  sapply(pacotes, require, character = T)
+} else {
+  sapply(pacotes, require, character = T)
+}
+```
+
+Carregar base municipio
+```{r}
+municipios <- read.table("municipios.csv", sep = ";", header = T, dec = ",")
+rownames(municipios) <- municipios[,1]
+municipios <- municipios[,-1]
+summary(municipios)
+```
+
+Padronizar dados
+```{r}
+municipios.padronizado <- scale(municipios)
+head(municipios.padronizado)
+```
+
+Rodar de 3 a 6 centros e visualizar qual a melhor divisao
+```{r}
+municipios.k3 <- kmeans(municipios.padronizado, centers = 3)
+municipios.k4 <- kmeans(municipios.padronizado, centers = 4)
+municipios.k5 <- kmeans(municipios.padronizado, centers = 5)
+municipios.k6 <- kmeans(municipios.padronizado, centers = 6)
+```
+
+Gráficos
+```{r}
+G1 <- fviz_cluster(municipios.k3, geom = "point", data = municipios.padronizado) + ggtitle("k = 3")
+G2 <- fviz_cluster(municipios.k4, geom = "point",  data = municipios.padronizado) + ggtitle("k = 4")
+G3 <- fviz_cluster(municipios.k5, geom = "point",  data = municipios.padronizado) + ggtitle("k = 5")
+G4 <- fviz_cluster(municipios.k6, geom = "point",  data = municipios.padronizado) + ggtitle("k = 6")
+```
+
+Criar uma matriz com 4 graficos
+```{r}
+grid.arrange(G1, G2, G3, G4, nrow = 2)
+```
+
+Verificando Elbow
+```{r}
+fviz_nbclust(municipios.padronizado, FUN = hcut, method = "wss")
+```
+
+Juntando dados
+```{r}
+municipios2 <- read.table("municipios.csv", sep = ";", header = T, dec = ",")
+municipiosfit <- data.frame(municipios.k6$cluster)
+head(municipiosfit)
+```
+
+Agrupar cluster e base
+```{r}
+MunicipioFinal <-  cbind(municipios2, municipiosfit)
+head(MunicipioFinal)
+```
+
