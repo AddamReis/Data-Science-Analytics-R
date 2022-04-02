@@ -1,0 +1,115 @@
+---
+title: "CLUSTER HIERARQUICO"
+Autor: "Addam Reis"
+---
+
+***Instalação dos pacotes***
+#tidyverse - pacote para manipulacao de dados
+#cluster - algoritmo de cluster
+#dendextend - compara dendogramas
+#factoextra - algoritmo de cluster e visualizacao
+#fpc - algoritmo de cluster e visualizacao
+#gridExtra - para a funcao grid arrange
+
+```{r}
+pacotes <- c("tidyverse","cluster","dendextend","factoextra","fpc","gridExtra",
+             "readxl")
+
+if(sum(as.numeric(!pacotes %in% installed.packages())) != 0){
+  instalador <- pacotes[!pacotes %in% installed.packages()]
+  for(i in 1:length(instalador)) {
+    install.packages(instalador, dependencies = T)
+    break()}
+  sapply(pacotes, require, character = T)
+} else {
+  sapply(pacotes, require, character = T)
+}
+```
+
+Carregar base de dados: 
+```{r}
+mcdonalds <- read.table("MCDONALDS.csv", sep = ";", dec = ",", header = T)
+head(mcdonalds)
+```
+
+Transformar o nome dos lanches em linhas
+```{r}
+rownames(mcdonalds) <- mcdonalds[,1]
+mcdonalds <- mcdonalds[,-1]
+head(mcdonalds)
+```
+
+Padronizar variaveis
+```{r}
+mcdonalds.padronizado <- scale(mcdonalds)
+head(mcdonalds.padronizado)
+```
+
+Calcular as distancias da matriz utilizando a distancia euclidiana
+```{r}
+distancia <- dist(mcdonalds.padronizado, method = "euclidean")
+summary(distancia)
+```
+
+Calcular o Cluster: métodos disponíveis "average", "single", "complete" e "ward.D"
+```{r}
+cluster.hierarquico <- hclust(distancia, method = "single" )
+cluster.hierarquico
+```
+
+Dendrograma 
+```{r}
+plot(cluster.hierarquico, cex = 0.6, hang = -1)
+```
+
+Criar o grafico e destacar os grupos
+```{r}
+rect.hclust(cluster.hierarquico, k = 2)
+```
+
+Verificando Elbow
+```{r}
+fviz_nbclust(mcdonalds.padronizado, FUN = hcut, method = "wss")
+```
+
+Criando 4 grupos de lanches 
+```{r}
+grupo_lanches4 <- cutree(cluster.hierarquico, k = 4)
+table(grupo_lanches4)
+```
+
+Transformando em data frame a saida do cluster
+```{r}
+Lanches_grupos <- data.frame(grupo_lanches4)
+tail(Lanches_grupos)
+```
+
+Juntando com a base original
+```{r}
+Base_lanches_fim <- cbind(mcdonalds, Lanches_grupos)
+head(Base_lanches_fim)
+```
+
+#Analise descritiva (Média das variáveis por grupo)
+```{r}
+mediagrupo <- Base_lanches_fim %>% 
+  group_by(grupo_lanches4) %>% 
+  summarise(n = n(),
+            Valor.Energetico = mean(Valor.Energetico), 
+            Carboidratos = mean(Carboidratos), 
+            Proteinas = mean(Proteinas),
+            Gorduras.Totais = mean(Gorduras.Totais), 
+            Gorduras.Saturadas = mean(Gorduras.Saturadas), 
+            Gorduras.Trans = mean(Gorduras.Trans),
+            Colesterol = mean(Colesterol), 
+            Fibra.Alimentar = mean(Fibra.Alimentar), 
+            Sodio = mean(Sodio),
+            Calcio = mean(Calcio), 
+            Ferro = mean(Ferro) )
+mediagrupo
+
+```
+
+
+
+
